@@ -114,7 +114,7 @@ is_app_available() {
 
 # Установка приложений, если они отсутствуют
 install_apps_if_missing() {
-    log "Проверка и установка требуемых приложений (cursor, git, telegram, whatsapp, yandex-browser)"
+    log "Проверка и установка требуемых приложений (cursor, git, telegram, whatsapp, yandex-browser, yt-dlp, ffmpeg, ffprobe)"
 
     declare -A app_to_commands
     app_to_commands["cursor"]="cursor"
@@ -122,6 +122,9 @@ install_apps_if_missing() {
     app_to_commands["telegram"]="telegram"
     app_to_commands["whatsapp"]="whatsapp"
     app_to_commands["yandex-browser"]="yandex-browser"
+    app_to_commands["yt-dlp"]="yt-dlp"
+    app_to_commands["ffmpeg"]="ffmpeg"
+    app_to_commands["ffprobe"]="ffprobe"
 
     # Возможные имена пакетов для установки через apt-get
     declare -A app_to_packages
@@ -130,6 +133,9 @@ install_apps_if_missing() {
     app_to_packages["telegram"]="telegram telegram-desktop"
     app_to_packages["whatsapp"]="whatsapp whatsapp-desktop whatsapp-for-linux wasistlos"
     app_to_packages["yandex-browser"]="yandex-browser yandex-browser-stable"
+    app_to_packages["yt-dlp"]="yt-dlp"
+    app_to_packages["ffmpeg"]="ffmpeg"
+    app_to_packages["ffprobe"]="ffprobe ffmpeg"
 
     # Возможные имена пакетов для проверки (включая варианты с разным регистром)
     declare -A app_to_check_packages
@@ -138,8 +144,11 @@ install_apps_if_missing() {
     app_to_check_packages["telegram"]="telegram Telegram telegram-desktop"
     app_to_check_packages["whatsapp"]="whatsapp WhatsApp whatsapp-desktop whatsapp-for-linux wasistlos"
     app_to_check_packages["yandex-browser"]="yandex-browser Yandex-browser yandex-browser-stable"
+    app_to_check_packages["yt-dlp"]="yt-dlp"
+    app_to_check_packages["ffmpeg"]="ffmpeg FFmpeg"
+    app_to_check_packages["ffprobe"]="ffprobe FFprobe ffmpeg"
 
-    for app in cursor git telegram whatsapp yandex-browser; do
+    for app in cursor git telegram whatsapp yandex-browser yt-dlp ffmpeg ffprobe; do
         # shellcheck disable=SC2086
         read -r -a candidates <<< "${app_to_commands[$app]}"
         if is_app_available "$app" "${candidates[@]}"; then
@@ -162,6 +171,20 @@ install_apps_if_missing() {
             continue
         fi
 
+        # Специальная установка yt-dlp из бинарника
+        if [[ "$app" == "yt-dlp" ]]; then
+            if install_yt_dlp; then
+                if is_app_available "$app" "${candidates[@]}"; then
+                    success "${app}: установка завершена"
+                else
+                    warning "${app}: установлен, но команда не найдена в PATH"
+                fi
+            else
+                warning "${app}: не удалось установить из бинарника"
+            fi
+            continue
+        fi
+
         log "${app}: не найден, устанавливаю через 'epm -y play ${app}'"
         if epm -y play "$app" &> /dev/null; then
             # Повторная проверка
@@ -177,7 +200,7 @@ install_apps_if_missing() {
             read -r -a pkg_candidates <<< "${app_to_packages[$app]}"
             installed_via_apt=0
             for pkg in "${pkg_candidates[@]}"; do
-                if apt-get -y install "$pkg"; then
+                if apt-get -y install "$pkg" &> /dev/null; then
                     installed_via_apt=1
                     break
                 fi
@@ -185,9 +208,9 @@ install_apps_if_missing() {
 
             if [[ $installed_via_apt -eq 0 ]]; then
                 warning "${app}: установка через apt-get не удалась, выполняю 'apt-get update' и повторяю"
-                if apt-get update; then
+                if apt-get update &> /dev/null; then
                     for pkg in "${pkg_candidates[@]}"; do
-                        if apt-get -y install "$pkg"; then
+                        if apt-get -y install "$pkg" &> /dev/null; then
                             installed_via_apt=1
                             break
                         fi
@@ -210,6 +233,53 @@ install_apps_if_missing() {
     done
 }
 
+# Установка yt-dlp из бинарника
+install_yt_dlp() {
+    local url="https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp"
+    local dest_dir="/opt/yt-dlp"
+    local dest_file="$dest_dir/yt-dlp"
+    local link_path="/usr/bin/yt-dlp"
+
+    log "yt-dlp: установка из бинарника в ${dest_file}"
+
+    # Создаем директорию назначения
+    if ! mkdir -p "$dest_dir"; then
+        error "Не удалось создать директорию ${dest_dir}"
+        return 1
+    fi
+
+    # Скачиваем файл (пытаемся curl, затем wget)
+    if command -v curl &> /dev/null; then
+        if ! curl -fsSL "$url" -o "$dest_file"; then
+            error "Ошибка скачивания yt-dlp через curl"
+            return 1
+        fi
+    elif command -v wget &> /dev/null; then
+        if ! wget -q "$url" -O "$dest_file"; then
+            error "Ошибка скачивания yt-dlp через wget"
+            return 1
+        fi
+    else
+        error "Не найден curl или wget для скачивания yt-dlp"
+        return 1
+    fi
+
+    # Делаем исполняемым
+    if ! chmod +x "$dest_file"; then
+        error "Не удалось сделать файл исполняемым: ${dest_file}"
+        return 1
+    fi
+
+    # Создаем (или обновляем) символьную ссылку
+    if ! ln -sf "$dest_file" "$link_path"; then
+        error "Не удалось создать символьную ссылку ${link_path}"
+        return 1
+    fi
+
+    success "yt-dlp установлен: ${dest_file} -> ${link_path}"
+    return 0
+}
+
 # Проверка доступных обновлений
 check_updates() {
     log "Проверка доступных обновлений..."
@@ -221,7 +291,7 @@ check_updates() {
     fi
     
     # Проверяем количество доступных обновлений через apt-get
-    local updates_count=$(apt-get -s dist-upgrade --enable-upgrade | grep -E "^[0-9]+ upgraded" | awk '{print $1}')
+    local updates_count=$(apt-get -s dist-upgrade --enable-upgrade 2>/dev/null | grep -E "^[0-9]+ upgraded" | awk '{print $1}')
     
     if [[ -z "$updates_count" ]]; then
         updates_count=0
