@@ -114,13 +114,14 @@ is_app_available() {
 
 # Установка приложений, если они отсутствуют
 install_apps_if_missing() {
-    log "Проверка и установка требуемых приложений (cursor, git, telegram, whatsapp)"
+    log "Проверка и установка требуемых приложений (cursor, git, telegram, whatsapp, yandex-browser)"
 
     declare -A app_to_commands
     app_to_commands["cursor"]="cursor"
     app_to_commands["git"]="git"
     app_to_commands["telegram"]="telegram"
     app_to_commands["whatsapp"]="whatsapp"
+    app_to_commands["yandex-browser"]="yandex-browser"
 
     # Возможные имена пакетов для установки через apt-get
     declare -A app_to_packages
@@ -128,6 +129,7 @@ install_apps_if_missing() {
     app_to_packages["git"]="git"
     app_to_packages["telegram"]="telegram telegram-desktop"
     app_to_packages["whatsapp"]="whatsapp whatsapp-desktop whatsapp-for-linux wasistlos"
+    app_to_packages["yandex-browser"]="yandex-browser yandex-browser-stable"
 
     # Возможные имена пакетов для проверки (включая варианты с разным регистром)
     declare -A app_to_check_packages
@@ -135,8 +137,9 @@ install_apps_if_missing() {
     app_to_check_packages["git"]="git"
     app_to_check_packages["telegram"]="telegram Telegram telegram-desktop"
     app_to_check_packages["whatsapp"]="whatsapp WhatsApp whatsapp-desktop whatsapp-for-linux wasistlos"
+    app_to_check_packages["yandex-browser"]="yandex-browser Yandex-browser yandex-browser-stable"
 
-    for app in cursor git telegram whatsapp; do
+    for app in cursor git telegram whatsapp yandex-browser; do
         # shellcheck disable=SC2086
         read -r -a candidates <<< "${app_to_commands[$app]}"
         if is_app_available "$app" "${candidates[@]}"; then
