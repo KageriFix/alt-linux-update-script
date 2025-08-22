@@ -1,0 +1,29 @@
+# Временные файлы
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Логи
+*.log
+
+# Системные файлы
+.DS_Store
+Thumbs.db
+
+# IDE файлы
+.vscode/
+.idea/
+*.sublime-*
+
+# Резервные копии
+*.bak
+*.backup
+
+# Файлы с переменными окружения
+.env
+.env.local
+
+# Кэш
+.cache/

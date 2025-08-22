@@ -1,0 +1,341 @@
+#!/bin/bash
+
+# Скрипт для автоматического обновления системы Alt Linux
+# Проверяет наличие обновлений и выполняет epm -y ei и epm -y full-upgrade
+
+set -e  # Выход при ошибке
+
+# Флаг наличия обновлений (0 - нет, 1 - есть)
+HAS_UPDATES=0
+
+# Флаг установки приложений (0 - не устанавливать, 1 - устанавливать)
+INSTALL_APPS=0
+
+# Цвета для вывода
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Функция для логирования
+log() {
+    echo -e "${BLUE}[$(date '+%Y-%m-%d %H:%M:%S')]${NC} $1"
+}
+
+error() {
+    echo -e "${RED}[ОШИБКА]${NC} $1" >&2
+}
+
+success() {
+    echo -e "${GREEN}[УСПЕХ]${NC} $1"
+}
+
+warning() {
+    echo -e "${YELLOW}[ПРЕДУПРЕЖДЕНИЕ]${NC} $1"
+}
+
+# Проверка прав root
+check_root() {
+    if [[ $EUID -ne 0 ]]; then
+        error "Этот скрипт должен быть запущен с правами root (sudo)"
+        exit 1
+    fi
+}
+
+# Проверка наличия epm
+check_epm() {
+    if ! command -v epm &> /dev/null; then
+        error "Команда epm не найдена. Убедитесь, что вы используете Alt Linux"
+        exit 1
+    fi
+}
+
+# Проверка наличия команды (любой из вариантов имён)
+is_any_command_present() {
+    for candidate in "$@"; do
+        if command -v "$candidate" &> /dev/null; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# Проверка наличия установленного пакета через epm
+is_package_installed_epm() {
+    local package_name="$1"
+    if epm --quiet installed "$package_name" &> /dev/null; then
+        return 0
+    fi
+    return 1
+}
+
+# Проверка наличия установленного пакета через rpm
+is_package_installed_rpm() {
+    local package_name="$1"
+    if rpm -q "$package_name" &> /dev/null; then
+        return 0
+    fi
+    return 1
+}
+
+# Проверка наличия символьных ссылок в /usr/bin
+is_symlink_in_usr_bin() {
+    local app_name="$1"
+    if [[ -L "/usr/bin/$app_name" ]]; then
+        return 0
+    fi
+    return 1
+}
+
+# Улучшенная проверка наличия приложения (команда + пакет + символьные ссылки)
+is_app_available() {
+    local app_name="$1"
+    shift
+    local candidates=("$@")
+    
+    # Сначала проверяем наличие исполняемых файлов
+    if is_any_command_present "${candidates[@]}"; then
+        return 0
+    fi
+    
+    # Проверяем наличие символьных ссылок в /usr/bin
+    if is_symlink_in_usr_bin "$app_name"; then
+        return 0
+    fi
+    
+    # Затем проверяем наличие установленных пакетов
+    if is_package_installed_epm "$app_name" || is_package_installed_rpm "$app_name"; then
+        return 0
+    fi
+    
+    return 1
+}
+
+# Установка приложений, если они отсутствуют
+install_apps_if_missing() {
+    log "Проверка и установка требуемых приложений (cursor, git, telegram, whatsapp)"
+
+    declare -A app_to_commands
+    app_to_commands["cursor"]="cursor"
+    app_to_commands["git"]="git"
+    app_to_commands["telegram"]="telegram"
+    app_to_commands["whatsapp"]="whatsapp"
+
+    # Возможные имена пакетов для установки через apt-get
+    declare -A app_to_packages
+    app_to_packages["cursor"]="cursor"
+    app_to_packages["git"]="git"
+    app_to_packages["telegram"]="telegram telegram-desktop"
+    app_to_packages["whatsapp"]="whatsapp whatsapp-desktop whatsapp-for-linux wasistlos"
+
+    # Возможные имена пакетов для проверки (включая варианты с разным регистром)
+    declare -A app_to_check_packages
+    app_to_check_packages["cursor"]="cursor Cursor"
+    app_to_check_packages["git"]="git"
+    app_to_check_packages["telegram"]="telegram Telegram telegram-desktop"
+    app_to_check_packages["whatsapp"]="whatsapp WhatsApp whatsapp-desktop whatsapp-for-linux wasistlos"
+
+    for app in cursor git telegram whatsapp; do
+        # shellcheck disable=SC2086
+        read -r -a candidates <<< "${app_to_commands[$app]}"
+        if is_app_available "$app" "${candidates[@]}"; then
+            success "${app}: уже установлен"
+            continue
+        fi
+
+        # Дополнительная проверка через различные варианты имен пакетов
+        read -r -a check_packages <<< "${app_to_check_packages[$app]}"
+        package_found=0
+        for pkg in "${check_packages[@]}"; do
+            if is_package_installed_epm "$pkg" || is_package_installed_rpm "$pkg"; then
+                success "${app}: уже установлен (пакет: $pkg)"
+                package_found=1
+                break
+            fi
+        done
+        
+        if [[ $package_found -eq 1 ]]; then
+            continue
+        fi
+
+        log "${app}: не найден, устанавливаю через 'epm -y play ${app}'"
+        if epm -y play "$app" &> /dev/null; then
+            # Повторная проверка
+            if is_app_available "$app" "${candidates[@]}"; then
+                success "${app}: установка завершена"
+            else
+                warning "${app}: установка завершилась без ошибок, но команда не найдена в PATH. Возможно, требуется перезапуск shell или логин."
+            fi
+        else
+            warning "${app}: не удалось установить через epm play, пробую через apt-get"
+
+            # Пытаемся установить через apt-get, перебирая возможные имена пакетов
+            read -r -a pkg_candidates <<< "${app_to_packages[$app]}"
+            installed_via_apt=0
+            for pkg in "${pkg_candidates[@]}"; do
+                if apt-get -y install "$pkg"; then
+                    installed_via_apt=1
+                    break
+                fi
+            done
+
+            if [[ $installed_via_apt -eq 0 ]]; then
+                warning "${app}: установка через apt-get не удалась, выполняю 'apt-get update' и повторяю"
+                if apt-get update; then
+                    for pkg in "${pkg_candidates[@]}"; do
+                        if apt-get -y install "$pkg"; then
+                            installed_via_apt=1
+                            break
+                        fi
+                    done
+                else
+                    warning "apt-get update завершился с ошибкой"
+                fi
+            fi
+
+            if [[ $installed_via_apt -eq 1 ]]; then
+                if is_app_available "$app" "${candidates[@]}"; then
+                    success "${app}: установлен через apt-get"
+                else
+                    warning "${app}: установлен через apt-get, но команда не найдена в PATH"
+                fi
+            else
+                warning "${app}: не удалось установить ни через epm play, ни через apt-get"
+            fi
+        fi
+    done
+}
+
+# Проверка доступных обновлений
+check_updates() {
+    log "Проверка доступных обновлений..."
+    
+    # Обновляем список пакетов через apt-get
+    if ! apt-get update &> /dev/null; then
+        error "Не удалось обновить список пакетов через apt-get"
+        return 1
+    fi
+    
+    # Проверяем количество доступных обновлений через apt-get
+    local updates_count=$(apt-get -s dist-upgrade --enable-upgrade | grep -E "^[0-9]+ upgraded" | awk '{print $1}')
+    
+    if [[ -z "$updates_count" ]]; then
+        updates_count=0
+    fi
+    
+    if [[ $updates_count -gt 0 ]]; then
+        HAS_UPDATES=1
+        warning "Найдено обновлений: $updates_count"
+    else
+        HAS_UPDATES=0
+        success "Обновления не найдены. Система актуальна."
+    fi
+
+    # Возвращаем успех, чтобы различать ошибку проверки и наличие обновлений
+    return 0
+}
+
+# Выполнение обновления
+perform_upgrade() {
+    log "Начинаем процесс обновления..."
+    
+    # Выполняем epm -y ei (обновление индексов)
+    log "Выполняем epm -y ei..."
+    if epm -y ei &> /dev/null; then
+        success "Индексы успешно обновлены"
+    else
+        error "Ошибка при обновлении индексов"
+        return 1
+    fi
+    
+    # Обновляем пакеты, установленные через epm play
+    log "Обновляем пакеты, установленные через epm play..."
+    if epm play --update all &> /dev/null; then
+        success "Пакеты epm play успешно обновлены"
+    else
+        warning "Не удалось обновить пакеты epm play (возможно, нет установленных пакетов)"
+    fi
+    
+    # Выполняем epm -y full-upgrade
+    log "Выполняем epm -y full-upgrade..."
+    if epm -y full-upgrade &> /dev/null; then
+        success "Система успешно обновлена"
+    else
+        error "Ошибка при обновлении системы"
+        return 1
+    fi
+    
+    return 0
+}
+
+# Парсинг аргументов командной строки
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --install|-i)
+                INSTALL_APPS=1
+                shift
+                ;;
+            --help|-h)
+                echo "Использование: $0 [ОПЦИИ]"
+                echo ""
+                echo "Опции:"
+                echo "  -i, --install    Установить приложения (cursor, git, telegram, whatsapp)"
+                echo "  -h, --help       Показать эту справку"
+                echo ""
+                echo "Примеры:"
+                echo "  $0              # Только проверка и обновление системы"
+                echo "  $0 --install    # Установка приложений + обновление системы"
+                echo "  $0 -i           # То же самое"
+                exit 0
+                ;;
+            *)
+                error "Неизвестная опция: $1"
+                echo "Используйте '$0 --help' для получения справки"
+                exit 1
+                ;;
+        esac
+    done
+}
+
+# Основная функция
+main() {
+    log "Запуск скрипта автоматического обновления Alt Linux"
+    
+    # Проверки
+    check_root
+    check_epm
+    parse_args "$@"
+    
+    # Устанавливаем приложения только если указан флаг --install или -i
+    if [[ ${INSTALL_APPS} -eq 1 ]]; then
+        install_apps_if_missing
+    fi
+    
+    # Проверяем наличие обновлений
+    if ! check_updates; then
+        error "Не удалось проверить обновления"
+        exit 1
+    fi
+
+    if [[ ${HAS_UPDATES} -eq 0 ]]; then
+        log "Обновления не требуются. Завершение работы."
+        exit 0
+    fi
+    
+    # Выполняем обновление
+    if perform_upgrade; then
+        success "Обновление системы завершено успешно!"
+        log "Рекомендуется перезагрузить систему"
+    else
+        error "Обновление системы завершилось с ошибками"
+        exit 1
+    fi
+}
+
+# Обработка сигналов
+trap 'error "Скрипт прерван пользователем"; exit 1' INT TERM
+
+# Запуск основной функции
+main "$@"
