@@ -114,7 +114,7 @@ is_app_available() {
 
 # Установка приложений, если они отсутствуют
 install_apps_if_missing() {
-    log "Проверка и установка требуемых приложений (cursor, git, telegram, whatsapp, yandex-browser, yt-dlp, ffmpeg, ffprobe)"
+    log "Проверка и установка требуемых приложений (cursor, git, telegram, whatsapp, yandex-browser, yt-dlp, ffmpeg, ffprobe, vscode)"
 
     declare -A app_to_commands
     app_to_commands["cursor"]="cursor"
@@ -125,6 +125,7 @@ install_apps_if_missing() {
     app_to_commands["yt-dlp"]="yt-dlp"
     app_to_commands["ffmpeg"]="ffmpeg"
     app_to_commands["ffprobe"]="ffprobe"
+    app_to_commands["vscode"]="code"
 
     # Возможные имена пакетов для установки через apt-get
     declare -A app_to_packages
@@ -136,6 +137,7 @@ install_apps_if_missing() {
     app_to_packages["yt-dlp"]="yt-dlp"
     app_to_packages["ffmpeg"]="ffmpeg"
     app_to_packages["ffprobe"]="ffprobe ffmpeg"
+    app_to_packages["vscode"]="code code-insiders"
 
     # Возможные имена пакетов для проверки (включая варианты с разным регистром)
     declare -A app_to_check_packages
@@ -147,8 +149,9 @@ install_apps_if_missing() {
     app_to_check_packages["yt-dlp"]="yt-dlp"
     app_to_check_packages["ffmpeg"]="ffmpeg FFmpeg"
     app_to_check_packages["ffprobe"]="ffprobe FFprobe ffmpeg"
+    app_to_check_packages["vscode"]="code Code code-insiders"
 
-    for app in cursor git telegram whatsapp yandex-browser yt-dlp ffmpeg ffprobe; do
+    for app in cursor git telegram whatsapp yandex-browser yt-dlp ffmpeg ffprobe vscode; do
         # shellcheck disable=SC2086
         read -r -a candidates <<< "${app_to_commands[$app]}"
         if is_app_available "$app" "${candidates[@]}"; then
