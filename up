@@ -151,7 +151,7 @@ install_apps_if_missing() {
     app_to_check_packages["ffprobe"]="ffprobe FFprobe ffmpeg"
     app_to_check_packages["vscode"]="code Code code-insiders"
 
-    for app in cursor git telegram whatsapp yandex-browser yt-dlp ffmpeg ffprobe vscode; do
+    for app in cursor vscode git telegram whatsapp yandex-browser yt-dlp ffmpeg ffprobe; do
         # shellcheck disable=SC2086
         read -r -a candidates <<< "${app_to_commands[$app]}"
         if is_app_available "$app" "${candidates[@]}"; then

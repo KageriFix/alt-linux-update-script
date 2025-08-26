@@ -118,6 +118,7 @@ alt-linux-update-script/
 ```
 [2024-01-15 10:30:01] Проверка и установка требуемых приложений (cursor, git, telegram, whatsapp, yandex-browser, yt-dlp, ffmpeg, ffprobe, vscode)
 [УСПЕХ] cursor: уже установлен
+[УСПЕХ] vscode: уже установлен
 [УСПЕХ] git: уже установлен
 [УСПЕХ] telegram: уже установлен (пакет: Telegram)
 [УСПЕХ] whatsapp: уже установлен
@@ -125,7 +126,6 @@ alt-linux-update-script/
 [УСПЕХ] yt-dlp: уже установлен
 [УСПЕХ] ffmpeg: уже установлен
 [УСПЕХ] ffprobe: уже установлен
-[УСПЕХ] vscode: уже установлен
 ```
 
 ## Лицензия
