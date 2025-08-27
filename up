@@ -15,12 +15,12 @@ INSTALL_APPS=0
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
+VERY_LIGHT_BLUE='\033[0;36m'
 NC='\033[0m' # No Color
 
 # Функция для логирования
 log() {
-    echo -e "${BLUE}[$(date '+%Y-%m-%d %H:%M:%S')]${NC} $1"
+    echo -e "${VERY_LIGHT_BLUE}[$(date '+%Y-%m-%d %H:%M:%S')]${NC} $1"
 }
 
 error() {
@@ -137,7 +137,6 @@ install_apps_if_missing() {
     app_to_packages["yt-dlp"]="yt-dlp"
     app_to_packages["ffmpeg"]="ffmpeg"
     app_to_packages["ffprobe"]="ffprobe ffmpeg"
-    app_to_packages["vscode"]="code code-insiders"
 
     # Возможные имена пакетов для проверки (включая варианты с разным регистром)
     declare -A app_to_check_packages
