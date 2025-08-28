@@ -114,26 +114,31 @@ is_app_available() {
 
 # Установка приложений, если они отсутствуют
 install_apps_if_missing() {
-    log "Проверка и установка требуемых приложений (cursor, git, telegram, whatsapp, yandex-browser, yt-dlp, ffmpeg, ffprobe, vscode)"
+    log "Проверка и установка требуемых приложений (cursor, vscode, codium, git, telegram, whatsapp, yandex-browser, steam, yt-dlp, ffmpeg, ffprobe)"
 
     declare -A app_to_commands
     app_to_commands["cursor"]="cursor"
+    app_to_commands["vscode"]="code"
+    app_to_commands["codium"]="codium"
     app_to_commands["git"]="git"
     app_to_commands["telegram"]="telegram"
     app_to_commands["whatsapp"]="whatsapp"
     app_to_commands["yandex-browser"]="yandex-browser"
+    app_to_commands["steam"]="steam"
     app_to_commands["yt-dlp"]="yt-dlp"
     app_to_commands["ffmpeg"]="ffmpeg"
     app_to_commands["ffprobe"]="ffprobe"
-    app_to_commands["vscode"]="code"
 
     # Возможные имена пакетов для установки через apt-get
     declare -A app_to_packages
     app_to_packages["cursor"]="cursor"
+    app_to_packages["vscode"]="code code-insiders"
+    app_to_packages["codium"]="codium"
     app_to_packages["git"]="git"
     app_to_packages["telegram"]="telegram telegram-desktop"
     app_to_packages["whatsapp"]="whatsapp whatsapp-desktop whatsapp-for-linux wasistlos"
     app_to_packages["yandex-browser"]="yandex-browser yandex-browser-stable"
+    app_to_packages["steam"]="steam"
     app_to_packages["yt-dlp"]="yt-dlp"
     app_to_packages["ffmpeg"]="ffmpeg"
     app_to_packages["ffprobe"]="ffprobe ffmpeg"
@@ -141,16 +146,18 @@ install_apps_if_missing() {
     # Возможные имена пакетов для проверки (включая варианты с разным регистром)
     declare -A app_to_check_packages
     app_to_check_packages["cursor"]="cursor Cursor"
+    app_to_check_packages["vscode"]="code Code code-insiders"
+    app_to_check_packages["codium"]="codium Codium"
     app_to_check_packages["git"]="git"
     app_to_check_packages["telegram"]="telegram Telegram telegram-desktop"
     app_to_check_packages["whatsapp"]="whatsapp WhatsApp whatsapp-desktop whatsapp-for-linux wasistlos"
     app_to_check_packages["yandex-browser"]="yandex-browser Yandex-browser yandex-browser-stable"
+    app_to_check_packages["steam"]="steam Steam"
     app_to_check_packages["yt-dlp"]="yt-dlp"
     app_to_check_packages["ffmpeg"]="ffmpeg FFmpeg"
     app_to_check_packages["ffprobe"]="ffprobe FFprobe ffmpeg"
-    app_to_check_packages["vscode"]="code Code code-insiders"
 
-    for app in cursor vscode git telegram whatsapp yandex-browser yt-dlp ffmpeg ffprobe; do
+    for app in cursor vscode codium git telegram whatsapp yandex-browser steam yt-dlp ffmpeg ffprobe; do
         # shellcheck disable=SC2086
         read -r -a candidates <<< "${app_to_commands[$app]}"
         if is_app_available "$app" "${candidates[@]}"; then
@@ -356,7 +363,7 @@ parse_args() {
                 echo "Использование: $0 [ОПЦИИ]"
                 echo ""
                 echo "Опции:"
-                echo "  -i, --install    Установить приложения (cursor, git, telegram, whatsapp)"
+                echo "  -i, --install    Установить приложения (cursor, vscode, codium, git, telegram, whatsapp, yandex-browser, steam, yt-dlp, ffmpeg, ffprobe)"
                 echo "  -h, --help       Показать эту справку"
                 echo ""
                 echo "Примеры:"
