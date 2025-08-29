@@ -114,7 +114,7 @@ is_app_available() {
 
 # Установка приложений, если они отсутствуют
 install_apps_if_missing() {
-    log "Проверка и установка требуемых приложений (cursor, vscode, git, telegram, whatsapp, yandex-browser, steam, yt-dlp, ffmpeg, ffprobe)"
+    log "Проверка и установка требуемых приложений (cursor, vscode, git, telegram, whatsapp, yandex-browser, steam, yt-dlp, ffmpeg, ffprobe, nodejs)"
 
     declare -A app_to_commands
     app_to_commands["cursor"]="cursor"
@@ -127,6 +127,7 @@ install_apps_if_missing() {
     app_to_commands["yt-dlp"]="yt-dlp"
     app_to_commands["ffmpeg"]="ffmpeg"
     app_to_commands["ffprobe"]="ffprobe"
+    app_to_commands["nodejs"]="node"
 
     # Возможные имена пакетов для установки через apt-get
     declare -A app_to_packages
@@ -140,6 +141,7 @@ install_apps_if_missing() {
     app_to_packages["yt-dlp"]="yt-dlp"
     app_to_packages["ffmpeg"]="ffmpeg"
     app_to_packages["ffprobe"]="ffprobe ffmpeg"
+    app_to_packages["nodejs"]="nodejs"
 
     # Возможные имена пакетов для проверки (включая варианты с разным регистром)
     declare -A app_to_check_packages
@@ -153,8 +155,9 @@ install_apps_if_missing() {
     app_to_check_packages["yt-dlp"]="yt-dlp"
     app_to_check_packages["ffmpeg"]="ffmpeg FFmpeg"
     app_to_check_packages["ffprobe"]="ffprobe FFprobe ffmpeg"
+    app_to_check_packages["nodejs"]="nodejs node"
 
-    for app in cursor vscode git telegram whatsapp yandex-browser steam yt-dlp ffmpeg ffprobe; do
+    for app in cursor vscode git telegram whatsapp yandex-browser steam yt-dlp ffmpeg ffprobe nodejs; do
         # shellcheck disable=SC2086
         read -r -a candidates <<< "${app_to_commands[$app]}"
         if is_app_available "$app" "${candidates[@]}"; then
@@ -187,6 +190,20 @@ install_apps_if_missing() {
                 fi
             else
                 warning "${app}: не удалось установить из бинарника"
+            fi
+            continue
+        fi
+
+        # Специальная установка nodejs
+        if [[ "$app" == "nodejs" ]]; then
+            if install_nodejs; then
+                if is_app_available "$app" "${candidates[@]}"; then
+                    success "${app}: установка завершена"
+                else
+                    warning "${app}: установлен, но команда не найдена в PATH"
+                fi
+            else
+                warning "${app}: не удалось установить"
             fi
             continue
         fi
@@ -286,6 +303,38 @@ install_yt_dlp() {
     return 0
 }
 
+# Установка последней версии Node.js
+install_nodejs() {
+    log "nodejs: установка последней версии Node.js через nvm"
+
+    # Установка nvm, если он не установлен
+    if ! command -v nvm &> /dev/null; then
+        log "nvm не найден, устанавливаю..."
+        if command -v curl &> /dev/null; then
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+        elif command -v wget &> /dev/null; then
+            wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+        else
+            error "Не найден curl или wget для скачивания nvm"
+            return 1
+        fi
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+    fi
+    
+    # Установка последней версии Node.js
+    if nvm install --lts; then
+        nvm use --lts
+        nvm alias default 'lts/*'
+        success "Node.js установлен"
+        return 0
+    else
+        error "Не удалось установить Node.js"
+        return 1
+    fi
+}
+
 # Проверка доступных обновлений
 check_updates() {
     log "Проверка доступных обновлений..."
@@ -360,7 +409,7 @@ parse_args() {
                 echo "Использование: $0 [ОПЦИИ]"
                 echo ""
                 echo "Опции:"
-                echo "  -i, --install    Установить приложения (cursor, vscode, codium, git, telegram, whatsapp, yandex-browser, steam, yt-dlp, ffmpeg, ffprobe)"
+                echo "  -i, --install    Установить приложения (cursor, vscode, git, telegram, whatsapp, yandex-browser, steam, yt-dlp, ffmpeg, ffprobe, nodejs)"
                 echo "  -h, --help       Показать эту справку"
                 echo ""
                 echo "Примеры:"
