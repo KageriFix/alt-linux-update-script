@@ -196,7 +196,7 @@ install_apps_if_missing() {
 
         # Специальная установка nodejs
         if [[ "$app" == "nodejs" ]]; then
-            if install_nodejs; then
+            if install_nodejs_and_gemini_cli; then
                 if is_app_available "$app" "${candidates[@]}"; then
                     success "${app}: установка завершена"
                 else
@@ -330,7 +330,7 @@ install_nodejs_and_gemini_cli() {
         success "Node.js установлен"
 
         # Установка Gemini CLI
-        if npm install -g @google/gemini-cli; then
+        if npm install -g @google/gemini-cli@latest; then
             success "Gemini CLI установлен"
             return 0
         else
