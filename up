@@ -114,12 +114,11 @@ is_app_available() {
 
 # Установка приложений, если они отсутствуют
 install_apps_if_missing() {
-    log "Проверка и установка требуемых приложений (cursor, vscode, codium, git, telegram, whatsapp, yandex-browser, steam, yt-dlp, ffmpeg, ffprobe)"
+    log "Проверка и установка требуемых приложений (cursor, vscode, git, telegram, whatsapp, yandex-browser, steam, yt-dlp, ffmpeg, ffprobe)"
 
     declare -A app_to_commands
     app_to_commands["cursor"]="cursor"
     app_to_commands["vscode"]="code"
-    app_to_commands["codium"]="codium"
     app_to_commands["git"]="git"
     app_to_commands["telegram"]="telegram"
     app_to_commands["whatsapp"]="whatsapp"
@@ -133,7 +132,6 @@ install_apps_if_missing() {
     declare -A app_to_packages
     app_to_packages["cursor"]="cursor"
     app_to_packages["vscode"]="code code-insiders"
-    app_to_packages["codium"]="codium"
     app_to_packages["git"]="git"
     app_to_packages["telegram"]="telegram telegram-desktop"
     app_to_packages["whatsapp"]="whatsapp whatsapp-desktop whatsapp-for-linux wasistlos"
@@ -147,7 +145,6 @@ install_apps_if_missing() {
     declare -A app_to_check_packages
     app_to_check_packages["cursor"]="cursor Cursor"
     app_to_check_packages["vscode"]="code Code code-insiders"
-    app_to_check_packages["codium"]="codium Codium"
     app_to_check_packages["git"]="git"
     app_to_check_packages["telegram"]="telegram Telegram telegram-desktop"
     app_to_check_packages["whatsapp"]="whatsapp WhatsApp whatsapp-desktop whatsapp-for-linux wasistlos"
@@ -157,7 +154,7 @@ install_apps_if_missing() {
     app_to_check_packages["ffmpeg"]="ffmpeg FFmpeg"
     app_to_check_packages["ffprobe"]="ffprobe FFprobe ffmpeg"
 
-    for app in cursor vscode codium git telegram whatsapp yandex-browser steam yt-dlp ffmpeg ffprobe; do
+    for app in cursor vscode git telegram whatsapp yandex-browser steam yt-dlp ffmpeg ffprobe; do
         # shellcheck disable=SC2086
         read -r -a candidates <<< "${app_to_commands[$app]}"
         if is_app_available "$app" "${candidates[@]}"; then

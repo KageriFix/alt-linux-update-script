@@ -11,7 +11,7 @@
 - ✅ Автоматическая проверка доступных обновлений через `apt-get`
 - ✅ Обновление системы через `epm -y ei` и `epm -y full-upgrade`
 - ✅ Обновление пакетов, установленных через `epm play`
-- ✅ Установка приложений (cursor, vscode, codium, git, telegram, whatsapp, yandex-browser, steam, yt-dlp, ffmpeg, ffprobe) при необходимости
+- ✅ Установка приложений (cursor, vscode, git, telegram, whatsapp, yandex-browser, steam, yt-dlp, ffmpeg, ffprobe) при необходимости
 - ✅ Умная проверка уже установленных приложений (PATH, пакеты, символьные ссылки)
 - ✅ Резервная установка через `apt-get` при неудаче `epm play`
 - ✅ Специальная установка yt-dlp из бинарника
@@ -67,7 +67,6 @@ sudo ./up -i
 Скрипт может установить следующие приложения:
 - **cursor** - редактор кода
 - **vscode** - редактор кода от Microsoft
-- **codium** - открытая версия редактора кода
 - **git** - система контроля версий
 - **telegram** - мессенджер
 - **whatsapp** - мессенджер
@@ -122,10 +121,9 @@ alt-linux-update-script/
 
 ```
 [2024-01-15 10:30:00] Запуск скрипта автоматического обновления Alt Linux
-[2024-01-15 10:30:01] Проверка и установка требуемых приложений (cursor, vscode, codium, git, telegram, whatsapp, yandex-browser, steam, yt-dlp, ffmpeg, ffprobe)
+[2024-01-15 10:30:01] Проверка и установка требуемых приложений (cursor, vscode, git, telegram, whatsapp, yandex-browser, steam, yt-dlp, ffmpeg, ffprobe)
 [УСПЕХ] cursor: уже установлен
 [УСПЕХ] vscode: уже установлен
-[УСПЕХ] codium: уже установлен
 [УСПЕХ] git: уже установлен
 [УСПЕХ] telegram: уже установлен (пакет: Telegram)
 [УСПЕХ] whatsapp: уже установлен
