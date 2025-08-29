@@ -11,11 +11,11 @@
 - ✅ Автоматическая проверка доступных обновлений через `apt-get`
 - ✅ Обновление системы через `epm -y ei` и `epm -y full-upgrade`
 - ✅ Обновление пакетов, установленных через `epm play`
-- ✅ Установка приложений (cursor, vscode, git, telegram, whatsapp, yandex-browser, steam, yt-dlp, ffmpeg, ffprobe, nodejs) при необходимости
+- ✅ Установка приложений (cursor, vscode, git, telegram, whatsapp, yandex-browser, steam, yt-dlp, ffmpeg, ffprobe, nodejs, gemini-cli) при необходимости
 - ✅ Умная проверка уже установленных приложений (PATH, пакеты, символьные ссылки)
 - ✅ Резервная установка через `apt-get` при неудаче `epm play`
 - ✅ Специальная установка yt-dlp из бинарника
-- ✅ Установка последней версии Node.js через nvm
+- ✅ Установка последней версии Node.js через nvm и Gemini CLI
 - ✅ Цветной вывод с подробным логированием
 - ✅ Обработка ошибок и прерываний
 - ✅ Тихий режим работы (без лишнего вывода в терминал)
@@ -77,6 +77,7 @@ sudo ./up -i
 - **ffmpeg** - мультимедийный фреймворк (нужен для кодирования/декодирования)
 - **ffprobe** - инструмент анализа мультимедийных потоков
 - **nodejs** - последняя версия Node.js (устанавливается через nvm)
+- **gemini-cli** - Gemini CLI (устанавливается через npm)
 
 ## Механизм проверки установленных приложений
 
@@ -123,7 +124,7 @@ alt-linux-update-script/
 
 ```
 [2024-01-15 10:30:00] Запуск скрипта автоматического обновления Alt Linux
-[2024-01-15 10:30:01] Проверка и установка требуемых приложений (cursor, vscode, git, telegram, whatsapp, yandex-browser, steam, yt-dlp, ffmpeg, ffprobe, nodejs)
+[2024-01-15 10:30:01] Проверка и установка требуемых приложений (cursor, vscode, git, telegram, whatsapp, yandex-browser, steam, yt-dlp, ffmpeg, ffprobe, nodejs, gemini-cli)
 [УСПЕХ] cursor: уже установлен
 [УСПЕХ] vscode: уже установлен
 [УСПЕХ] git: уже установлен
@@ -135,9 +136,13 @@ alt-linux-update-script/
 [УСПЕХ] ffmpeg: уже установлен
 [УСПЕХ] ffprobe: уже установлен
 [УСПЕХ] nodejs: уже установлен
+[УСПЕХ] gemini-cli: уже установлен
 ```
 
 ## Changelog
+
+### v1.6.0
+- Добавлена поддержка gemini-cli с установкой через npm
 
 ### v1.5.0
 - Добавлена поддержка nodejs с установкой через nvm

@@ -303,9 +303,9 @@ install_yt_dlp() {
     return 0
 }
 
-# Установка последней версии Node.js
-install_nodejs() {
-    log "nodejs: установка последней версии Node.js через nvm"
+# Установка последней версии Node.js и Gemini CLI
+install_nodejs_and_gemini_cli() {
+    log "nodejs: установка последней версии Node.js через nvm и Gemini CLI"
 
     # Установка nvm, если он не установлен
     if ! command -v nvm &> /dev/null; then
@@ -328,7 +328,15 @@ install_nodejs() {
         nvm use --lts
         nvm alias default 'lts/*'
         success "Node.js установлен"
-        return 0
+
+        # Установка Gemini CLI
+        if npm install -g @google/gemini-cli; then
+            success "Gemini CLI установлен"
+            return 0
+        else
+            error "Не удалось установить Gemini CLI"
+            return 1
+        fi
     else
         error "Не удалось установить Node.js"
         return 1
