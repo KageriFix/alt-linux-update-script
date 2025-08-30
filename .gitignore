@@ -27,3 +27,7 @@ Thumbs.db
 
 # Кэш
 .cache/
+
+# Gemini
+GEMINI.md
+.cursor/

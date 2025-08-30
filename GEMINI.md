@@ -3,7 +3,7 @@
 This project provides a shell script for automating system updates and application installations on Alt Linux. The script, named `up`, is designed to be run with root privileges and offers the following key features:
 
 - **System Updates:** It checks for and installs system updates using `apt-get` and `epm`, the default package managers in Alt Linux.
-- **Application Installation:** It can install a predefined list of popular applications, including code editors (VSCode, Cursor), communication tools (Telegram, WhatsApp), and other utilities.
+- **Application Installation:** It can install a predefined list of popular applications, including code editors (VSCode, Cursor) and other utilities.
 - **Smart Checks:** The script intelligently checks if applications are already installed before attempting to install them, looking for executables in the system's PATH, package manager records, and symbolic links.
 - **Flexible Installation:** It attempts to install applications using `epm play` first, and if that fails, it falls back to using `apt-get`.
 - **Command-Line Interface:** The script supports command-line arguments like `--install` (or `-i`) to trigger the application installation process and `--help` (or `-h`) to display usage instructions.
