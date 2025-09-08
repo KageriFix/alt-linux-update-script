@@ -1,14 +1,17 @@
 # Project Overview
 
-This project provides a shell script for automating system updates and application installations on Alt Linux. The script, named `up`, is designed to be run with root privileges and offers the following key features:
+This project provides a shell script for automating system updates and basic application installations on Alt Linux. The script, named `up`, is designed to be run with root privileges.
 
-- **System Updates:** It checks for and installs system updates using `apt-get` and `epm`, the default package managers in Alt Linux.
-- **Application Installation:** It can install a predefined list of popular applications, including code editors (VSCode, Cursor) and other utilities.
-- **Smart Checks:** The script intelligently checks if applications are already installed before attempting to install them, looking for executables in the system's PATH, package manager records, and symbolic links.
-- **Flexible Installation:** It attempts to install applications using `epm play` first, and if that fails, it falls back to using `apt-get`.
-- **Command-Line Interface:** The script supports command-line arguments like `--install` (or `-i`) to trigger the application installation process and `--help` (or `-h`) to display usage instructions.
+## Key Features
 
-The primary technologies used are **Bash scripting**, `epm`, and `apt-get`.
+- **System Updates:** It updates the system by running `epm -y ei` (to update package indexes) and `epm -y full-upgrade` (to perform the upgrade).
+- **Application Installation:** It can install `git` and `vscode` (logged as `vscode`) using the `epm` package manager.
+- **Command-Line Interface:** The script supports command-line arguments:
+    - `--install` (or `-i`) to trigger the application installation process.
+    - `--help` (or `-h`) to display usage instructions.
+- **Logging:** Provides clear, color-coded output for all operations.
+
+The primary technology used is **Bash scripting** with `epm`.
 
 # Building and Running
 
@@ -31,19 +34,18 @@ This project is a standalone shell script and does not require a separate build 
     sudo ./up --install
     ```
 
-**Testing:**
+# Testing
 
 There are no automated tests in this project. To test the script's functionality, you can run it on an Alt Linux system and verify the following:
 
-*   The script correctly identifies and installs system updates.
-*   The script correctly identifies and installs the specified applications.
-*   The script correctly identifies already installed applications and skips them.
+*   The script correctly runs the system update commands.
+*   When run with `--install`, the script correctly installs `git` and `vscode`.
+*   The script correctly identifies if `git` or `vscode` are already installed and attempts to update them.
 
 # Development Conventions
 
 The script follows standard shell scripting best practices:
 
 *   **Error Handling:** The `set -e` option is used to exit the script immediately if any command fails.
-*   **Functions:** The code is organized into functions with clear responsibilities (e.g., `check_root`, `install_apps_if_missing`, `perform_upgrade`).
+*   **Functions:** The code is organized into functions with clear responsibilities (e.g., `check_root`, `install_applications`, `update_indexes`, `perform_full_upgrade`).
 *   **Logging:** The script provides informative output with color-coded messages for success, warnings, and errors.
-*   **Variable Naming:** Variables are named descriptively (e.g., `HAS_UPDATES`, `INSTALL_APPS`).

@@ -1,24 +1,18 @@
 #!/bin/bash
 
-# Скрипт для автоматического обновления системы Alt Linux
-# Проверяет наличие обновлений и выполняет epm -y ei и epm -y full-upgrade
+# Скрипт для обновления системы Alt Linux и установки приложений.
+# Выполняет epm -y ei и epm -y full-upgrade.
+# Позволяет установить git и vscode с ключами -i или --install.
 
 set -e  # Выход при ошибке
 
-# Флаг наличия обновлений (0 - нет, 1 - есть)
-HAS_UPDATES=0
-
-# Флаг установки приложений (0 - не устанавливать, 1 - устанавливать)
-INSTALL_APPS=0
-
-# Цвета для вывода
+# --- Цвета и функции логирования ---
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 VERY_LIGHT_BLUE='\033[0;36m'
 NC='\033[0m' # No Color
 
-# Функция для логирования
 log() {
     echo -e "${VERY_LIGHT_BLUE}[$(date '+%Y-%m-%d %H:%M:%S')]${NC} $1"
 }
@@ -34,8 +28,9 @@ success() {
 warning() {
     echo -e "${YELLOW}[ПРЕДУПРЕЖДЕНИЕ]${NC} $1"
 }
+# --- Конец секции логирования ---
 
-# Проверка прав root
+# --- Основные функции ---
 check_root() {
     if [[ $EUID -ne 0 ]]; then
         error "Этот скрипт должен быть запущен с правами root (sudo)"
@@ -43,304 +38,9 @@ check_root() {
     fi
 }
 
-# Проверка наличия epm
-check_epm() {
-    if ! command -v epm &> /dev/null; then
-        error "Команда epm не найдена. Убедитесь, что вы используете Alt Linux"
-        exit 1
-    fi
-}
+# Переменная для флага установки
+INSTALL_APPS=0
 
-# Проверка наличия команды (любой из вариантов имён)
-is_any_command_present() {
-    for candidate in "$@"; do
-        if command -v "$candidate" &> /dev/null; then
-            return 0
-        fi
-    done
-    return 1
-}
-
-# Проверка наличия установленного пакета через epm
-is_package_installed_epm() {
-    local package_name="$1"
-    if epm --quiet installed "$package_name" &> /dev/null; then
-        return 0
-    fi
-    return 1
-}
-
-# Проверка наличия установленного пакета через rpm
-is_package_installed_rpm() {
-    local package_name="$1"
-    if rpm -q "$package_name" &> /dev/null; then
-        return 0
-    fi
-    return 1
-}
-
-# Проверка наличия символьных ссылок в /usr/bin
-is_symlink_in_usr_bin() {
-    local app_name="$1"
-    if [[ -L "/usr/bin/$app_name" ]]; then
-        return 0
-    fi
-    return 1
-}
-
-# Улучшенная проверка наличия приложения (команда + пакет + символьные ссылки)
-is_app_available() {
-    local app_name="$1"
-    shift
-    local candidates=("$@")
-    
-    # Сначала проверяем наличие исполняемых файлов
-    if is_any_command_present "${candidates[@]}"; then
-        return 0
-    fi
-    
-    # Проверяем наличие символьных ссылок в /usr/bin
-    if is_symlink_in_usr_bin "$app_name"; then
-        return 0
-    fi
-    
-    # Затем проверяем наличие установленных пакетов
-    if is_package_installed_epm "$app_name" || is_package_installed_rpm "$app_name"; then
-        return 0
-    fi
-    
-    return 1
-}
-
-# Установка приложений, если они отсутствуют
-install_apps_if_missing() {
-    log "Проверка и установка требуемых приложений (cursor, vscode, yandex-browser, yt-dlp, ffmpeg, ffprobe)"
-
-    declare -A app_to_commands
-    app_to_commands["cursor"]="cursor"
-    app_to_commands["vscode"]="code"
-    app_to_commands["yandex-browser"]="yandex-browser"
-    app_to_commands["yt-dlp"]="yt-dlp"
-    app_to_commands["ffmpeg"]="ffmpeg"
-    app_to_commands["ffprobe"]="ffprobe"
-
-    # Возможные имена пакетов для установки через apt-get
-    declare -A app_to_packages
-    app_to_packages["cursor"]="cursor"
-    app_to_packages["vscode"]="code code-insiders"
-    app_to_packages["yandex-browser"]="yandex-browser yandex-browser-stable"
-    app_to_packages["yt-dlp"]="yt-dlp"
-    app_to_packages["ffmpeg"]="ffmpeg"
-    app_to_packages["ffprobe"]="ffprobe ffmpeg"
-
-    # Возможные имена пакетов для проверки (включая варианты с разным регистром)
-    declare -A app_to_check_packages
-    app_to_check_packages["cursor"]="cursor Cursor"
-    app_to_check_packages["vscode"]="code Code code-insiders"
-    app_to_check_packages["yandex-browser"]="yandex-browser Yandex-browser yandex-browser-stable"
-    app_to_check_packages["yt-dlp"]="yt-dlp"
-    app_to_check_packages["ffmpeg"]="ffmpeg FFmpeg"
-    app_to_check_packages["ffprobe"]="ffprobe FFprobe ffmpeg"
-
-    for app in cursor vscode yandex-browser yt-dlp ffmpeg ffprobe; do
-        # shellcheck disable=SC2086
-        read -r -a candidates <<< "${app_to_commands[$app]}"
-        if is_app_available "$app" "${candidates[@]}"; then
-            success "${app}: уже установлен"
-            continue
-        fi
-
-        # Дополнительная проверка через различные варианты имен пакетов
-        read -r -a check_packages <<< "${app_to_check_packages[$app]}"
-        package_found=0
-        for pkg in "${check_packages[@]}"; do
-            if is_package_installed_epm "$pkg" || is_package_installed_rpm "$pkg"; then
-                success "${app}: уже установлен (пакет: $pkg)"
-                package_found=1
-                break
-            fi
-        done
-        
-        if [[ $package_found -eq 1 ]]; then
-            continue
-        fi
-
-        # Специальная установка yt-dlp из бинарника
-        if [[ "$app" == "yt-dlp" ]]; then
-            if install_yt_dlp; then
-                if is_app_available "$app" "${candidates[@]}"; then
-                    success "${app}: установка завершена"
-                else
-                    warning "${app}: установлен, но команда не найдена в PATH"
-                fi
-            else
-                warning "${app}: не удалось установить из бинарника"
-            fi
-            continue
-        fi
-
-        
-
-        log "${app}: не найден, устанавливаю через 'epm -y play ${app}'"
-        if epm -y play "$app" &> /dev/null; then
-            # Повторная проверка
-            if is_app_available "$app" "${candidates[@]}"; then
-                success "${app}: установка завершена"
-            else
-                warning "${app}: установка завершилась без ошибок, но команда не найдена в PATH. Возможно, требуется перезапуск shell или логин."
-            fi
-        else
-            warning "${app}: не удалось установить через epm play, пробую через apt-get"
-
-            # Пытаемся установить через apt-get, перебирая возможные имена пакетов
-            read -r -a pkg_candidates <<< "${app_to_packages[$app]}"
-            installed_via_apt=0
-            for pkg in "${pkg_candidates[@]}"; do
-                if apt-get -y install "$pkg" &> /dev/null; then
-                    installed_via_apt=1
-                    break
-                fi
-            done
-
-            if [[ $installed_via_apt -eq 0 ]]; then
-                warning "${app}: установка через apt-get не удалась, выполняю 'apt-get update' и повторяю"
-                if apt-get update &> /dev/null; then
-                    for pkg in "${pkg_candidates[@]}"; do
-                        if apt-get -y install "$pkg" &> /dev/null; then
-                            installed_via_apt=1
-                            break
-                        fi
-                    done
-                else
-                    warning "apt-get update завершился с ошибкой"
-                fi
-            fi
-
-            if [[ $installed_via_apt -eq 1 ]]; then
-                if is_app_available "$app" "${candidates[@]}"; then
-                    success "${app}: установлен через apt-get"
-                else
-                    warning "${app}: установлен через apt-get, но команда не найдена в PATH"
-                fi
-            else
-                warning "${app}: не удалось установить ни через epm play, ни через apt-get"
-            fi
-        fi
-    done
-}
-
-# Установка yt-dlp из бинарника
-install_yt_dlp() {
-    local url="https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp"
-    local dest_dir="/opt/yt-dlp"
-    local dest_file="$dest_dir/yt-dlp"
-    local link_path="/usr/bin/yt-dlp"
-
-    log "yt-dlp: установка из бинарника в ${dest_file}"
-
-    # Создаем директорию назначения
-    if ! mkdir -p "$dest_dir"; then
-        error "Не удалось создать директорию ${dest_dir}"
-        return 1
-    fi
-
-    # Скачиваем файл (пытаемся curl, затем wget)
-    if command -v curl &> /dev/null; then
-        if ! curl -fsSL "$url" -o "$dest_file"; then
-            error "Ошибка скачивания yt-dlp через curl"
-            return 1
-        fi
-    elif command -v wget &> /dev/null; then
-        if ! wget -q "$url" -O "$dest_file"; then
-            error "Ошибка скачивания yt-dlp через wget"
-            return 1
-        fi
-    else
-        error "Не найден curl или wget для скачивания yt-dlp"
-        return 1
-    fi
-
-    # Делаем исполняемым
-    if ! chmod +x "$dest_file"; then
-        error "Не удалось сделать файл исполняемым: ${dest_file}"
-        return 1
-    fi
-
-    # Создаем (или обновляем) символьную ссылку
-    if ! ln -sf "$dest_file" "$link_path"; then
-        error "Не удалось создать символьную ссылку ${link_path}"
-        return 1
-    fi
-
-    success "yt-dlp установлен: ${dest_file} -> ${link_path}"
-    return 0
-}
-
-
-
-# Проверка доступных обновлений
-check_updates() {
-    log "Проверка доступных обновлений..."
-    
-    # Обновляем список пакетов через apt-get
-    if ! apt-get update &> /dev/null; then
-        error "Не удалось обновить список пакетов через apt-get"
-        return 1
-    fi
-    
-    # Проверяем количество доступных обновлений через apt-get
-    local updates_count=$(apt-get -s dist-upgrade --enable-upgrade 2>/dev/null | grep -E "^[0-9]+ upgraded" | awk '{print $1}')
-    
-    if [[ -z "$updates_count" ]]; then
-        updates_count=0
-    fi
-    
-    if [[ $updates_count -gt 0 ]]; then
-        HAS_UPDATES=1
-        warning "Найдено обновлений: $updates_count"
-    else
-        HAS_UPDATES=0
-        success "Обновления не найдены. Система актуальна."
-    fi
-
-    # Возвращаем успех, чтобы различать ошибку проверки и наличие обновлений
-    return 0
-}
-
-# Выполнение обновления
-perform_upgrade() {
-    log "Начинаем процесс обновления..."
-    
-    # Выполняем epm -y ei (обновление индексов)
-    log "Выполняем epm -y ei..."
-    if epm -y ei &> /dev/null; then
-        success "Индексы успешно обновлены"
-    else
-        error "Ошибка при обновлении индексов"
-        return 1
-    fi
-    
-    # Обновляем пакеты, установленные через epm play
-    log "Обновляем пакеты, установленные через epm play..."
-    if epm play --update all &> /dev/null; then
-        success "Пакеты epm play успешно обновлены"
-    else
-        warning "Не удалось обновить пакеты epm play (возможно, нет установленных пакетов)"
-    fi
-    
-    # Выполняем epm -y full-upgrade
-    log "Выполняем epm -y full-upgrade..."
-    if epm -y full-upgrade &> /dev/null; then
-        success "Система успешно обновлена"
-    else
-        error "Ошибка при обновлении системы"
-        return 1
-    fi
-    
-    return 0
-}
-
-# Парсинг аргументов командной строки
 parse_args() {
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -352,13 +52,10 @@ parse_args() {
                 echo "Использование: $0 [ОПЦИИ]"
                 echo ""
                 echo "Опции:"
-                echo "  -i, --install    Установить приложения (cursor, vscode, yandex-browser, yt-dlp, ffmpeg, ffprobe)"
+                echo "  -i, --install    Установить/обновить git и vscode"
                 echo "  -h, --help       Показать эту справку"
                 echo ""
-                echo "Примеры:"
-                echo "  $0              # Только проверка и обновление системы"
-                echo "  $0 --install    # Установка приложений + обновление системы"
-                echo "  $0 -i           # То же самое"
+                echo "Без опций скрипт только обновляет систему."
                 exit 0
                 ;;
             *)
@@ -370,43 +67,88 @@ parse_args() {
     done
 }
 
-# Основная функция
-main() {
-    log "Запуск скрипта автоматического обновления Alt Linux"
-    
-    # Проверки
-    check_root
-    check_epm
-    parse_args "$@"
-    
-    # Устанавливаем приложения только если указан флаг --install или -i
-    if [[ ${INSTALL_APPS} -eq 1 ]]; then
-        install_apps_if_missing
-    fi
-    
-    # Проверяем наличие обновлений
-    if ! check_updates; then
-        error "Не удалось проверить обновления"
-        exit 1
+install_applications() {
+    local apps_to_install=("$@")
+    if [[ ${#apps_to_install[@]} -eq 0 ]]; then
+        warning "Список приложений для установки пуст."
+        return
     fi
 
-    if [[ ${HAS_UPDATES} -eq 0 ]]; then
-        log "Обновления не требуются. Завершение работы."
-        exit 0
-    fi
-    
-    # Выполняем обновление
-    if perform_upgrade; then
-        success "Обновление системы завершено успешно!"
-        log "Рекомендуется перезагрузить систему"
-    else
-        error "Обновление системы завершилось с ошибками"
-        exit 1
-    fi
+    log "--- Запуск установки приложений: ${apps_to_install[*]} ---"
+
+    # Карта для сопоставления имени пакета и имени команды
+    declare -A app_command_map
+    app_command_map["git"]="git"
+    app_command_map["code"]="code"
+
+    # Карта для сопоставления имени пакета и его отображаемого имени
+    declare -A app_display_name_map
+    app_display_name_map["git"]="git"
+    app_display_name_map["code"]="vscode"
+
+    for package_name in "${apps_to_install[@]}"; do
+        local command_name=${app_command_map[$package_name]}
+        local display_name=${app_display_name_map[$package_name]}
+        # Если для пакета нет карты, считаем, что имя команды и отображаемое имя совпадают с именем пакета
+        if [[ -z "$command_name" ]]; then
+            command_name=$package_name
+        fi
+        if [[ -z "$display_name" ]]; then
+            display_name=$package_name
+        fi
+
+        log "--- Обработка '$display_name' ---"
+        if command -v "$command_name" &> /dev/null; then
+            log "Приложение '$display_name' уже установлено. Обновление..."
+        else
+            log "Приложение '$display_name' не найдено. Установка..."
+        fi
+
+        if epm -y install "$package_name"; then
+            success "'$display_name' успешно установлен/обновлен."
+        else
+            # С set -e скрипт завершится здесь, но добавим сообщение для ясности
+            error "Не удалось установить/обновить '$display_name'."
+            exit 1
+        fi
+    done
+
+    log "--- Установка приложений завершена ---"
 }
 
-# Обработка сигналов
+update_indexes() {
+    log "Обновление индексов пакетов (epm -y ei)..."
+    epm -y ei
+    success "Индексы пакетов успешно обновлены."
+}
+
+perform_full_upgrade() {
+    log "Полное обновление системы (epm -y full-upgrade)..."
+    epm -y full-upgrade
+    success "Система успешно обновлена."
+}
+# --- Конец секции функций ---
+
+# --- Основная логика ---
+main() {
+    check_root
+    parse_args "$@"
+
+    log "Запуск скрипта."
+
+    if [[ ${INSTALL_APPS} -eq 1 ]]; then
+        install_applications "git" "code"
+    fi
+
+    update_indexes
+    perform_full_upgrade
+
+    success "Скрипт успешно завершил работу."
+    log "Рекомендуется перезагрузить систему."
+}
+
+# Обработка прерывания
 trap 'error "Скрипт прерван пользователем"; exit 1' INT TERM
 
-# Запуск основной функции
+# Запуск
 main "$@"
