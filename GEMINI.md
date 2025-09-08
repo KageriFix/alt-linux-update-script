@@ -34,6 +34,23 @@ This project is a standalone shell script and does not require a separate build 
     sudo ./up --install
     ```
 
+# `ai` Script for AI Tools
+
+The project also includes an `ai` script that installs `nodejs` and `gemini-cli`.
+
+## Usage
+
+1.  **Make the script executable:**
+    ```bash
+    chmod +x ai
+    ```
+
+2.  **Run the script:**
+    ```bash
+    ./ai
+    ```
+The script will install `nvm` (Node Version Manager) to manage `nodejs` versions, the latest LTS version of `nodejs`, and `gemini-cli`.
+
 # Testing
 
 There are no automated tests in this project. To test the script's functionality, you can run it on an Alt Linux system and verify the following:
