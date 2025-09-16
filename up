@@ -2,7 +2,7 @@
 
 # Скрипт для обновления системы Alt Linux и установки приложений.
 # Выполняет epm -y ei и epm -y full-upgrade.
-# Позволяет установить git и vscode с ключами -i или --install.
+# Позволяет установить git, vscode, ffmpeg и yt-dlp с ключами -i или --install.
 
 set -e  # Выход при ошибке
 
@@ -52,7 +52,7 @@ parse_args() {
                 echo "Использование: $0 [ОПЦИИ]"
                 echo ""
                 echo "Опции:"
-                echo "  -i, --install    Установить/обновить git и vscode"
+                echo "  -i, --install    Установить/обновить git, vscode, ffmpeg и yt-dlp"
                 echo "  -h, --help       Показать эту справку"
                 echo ""
                 echo "Без опций скрипт только обновляет систему."
@@ -116,6 +116,50 @@ install_applications() {
     log "--- Установка приложений завершена ---"
 }
 
+install_yt_dlp() {
+    log "--- Обработка 'yt-dlp' ---"
+
+    if ! command -v curl &> /dev/null; then
+        error "Для установки yt-dlp требуется 'curl'. Установите его и попробуйте снова."
+        return 1
+    fi
+
+    local install_dir="/opt/yt-dlp"
+    local bin_path="$install_dir/yt-dlp"
+    local symlink_path="/usr/local/bin/yt-dlp"
+    local download_url="https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp"
+
+    if [[ -L "$symlink_path" ]]; then
+        log "Приложение 'yt-dlp' уже установлено. Обновление..."
+    else
+        log "Приложение 'yt-dlp' не найдено. Установка..."
+    fi
+
+    log "Создание каталога для yt-dlp..."
+    mkdir -p "$install_dir"
+
+    log "Загрузка последней версии yt-dlp..."
+    if curl -L "$download_url" -o "$bin_path"; then
+        log "yt-dlp успешно загружен."
+    else
+        error "Не удалось загрузить yt-dlp."
+        return 1
+    fi
+
+    log "Предоставление прав на выполнение..."
+    chmod +x "$bin_path"
+
+    log "Создание символической ссылки..."
+    ln -sf "$bin_path" "$symlink_path"
+
+    if command -v yt-dlp &> /dev/null; then
+        success "'yt-dlp' успешно установлен/обновлен."
+    else
+        error "Не удалось сделать yt-dlp доступным в системе."
+        return 1
+    fi
+}
+
 update_indexes() {
     log "Обновление индексов пакетов (epm -y ei)..."
     epm -y ei
@@ -137,7 +181,8 @@ main() {
     log "Запуск скрипта."
 
     if [[ ${INSTALL_APPS} -eq 1 ]]; then
-        install_applications "git" "code"
+        install_applications "git" "code" "ffmpeg"
+        install_yt_dlp
     fi
 
     update_indexes

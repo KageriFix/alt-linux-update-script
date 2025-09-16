@@ -1,68 +1,74 @@
 # Project Overview
 
-This project provides a shell script for automating system updates and basic application installations on Alt Linux. The script, named `up`, is designed to be run with root privileges.
+This project provides a set of shell scripts for automating system updates, application installations, and other tasks on Alt Linux.
 
-## Key Features
+## `up` Script
 
-- **System Updates:** It updates the system by running `epm -y ei` (to update package indexes) and `epm -y full-upgrade` (to perform the upgrade).
-- **Application Installation:** It can install `git` and `vscode` (logged as `vscode`) using the `epm` package manager.
-- **Command-Line Interface:** The script supports command-line arguments:
-    - `--install` (or `-i`) to trigger the application installation process.
-    - `--help` (or `-h`) to display usage instructions.
+The `up` script, designed to be run with root privileges, automates system maintenance.
+
+### Key Features of `up`
+
+- **System Updates:** It updates the system by running `epm -y ei` and `epm -y full-upgrade`.
+- **Application Installation:** It can install `git`, `vscode`, and `yt-dlp`.
+- **Command-Line Interface:** Supports `--install` (or `-i`) and `--help` (or `-h`).
 - **Logging:** Provides clear, color-coded output for all operations.
 
-The primary technology used is **Bash scripting** with `epm`.
+## `yt` Script
 
-# Building and Running
+The `yt` script is a wrapper around `yt-dlp` for downloading YouTube videos.
 
-This project is a standalone shell script and does not require a separate build process.
+### Key Features of `yt`
 
-**To run the script:**
+- **Video Downloading:** Downloads a video from a given URL.
+- **Cookie Authentication:** Requires a `cookies.txt` file in the user's home directory.
+- **Formatting:** Recodes the video to `mp4`.
+- **Organized Output:** Saves the video to `~/video/<uploader>/<title>.mp4`.
 
-1.  **Make the script executable:**
-    ```bash
-    chmod +x up
-    ```
-
-2.  **Run with `sudo` for system updates:**
-    ```bash
-    sudo ./up
-    ```
-
-3.  **Run with the `--install` flag to also install applications:**
-    ```bash
-    sudo ./up --install
-    ```
-
-# `ai` Script for AI Tools
+## `ai` Script for AI Tools
 
 The project also includes an `ai` script that installs `nodejs` and `gemini-cli`.
 
-## Usage
+# Building and Running
 
-1.  **Make the script executable:**
+This project consists of standalone shell scripts and does not require a separate build process.
+
+1.  **Make the scripts executable:**
     ```bash
-    chmod +x ai
+    chmod +x up yt ai
     ```
 
-2.  **Run the script:**
+2.  **(Optional but Recommended) Create symbolic links:**
+    For global access, create symbolic links to a directory in your `PATH`.
     ```bash
+    sudo ln -sf $(pwd)/up /usr/local/bin/up
+    sudo ln -sf $(pwd)/yt /usr/local/bin/yt
+    ```
+
+3.  **Run the scripts:**
+    ```bash
+    # Update system and install apps
+    sudo up --install
+
+    # Download a video
+    yt -u <URL>
+
+    # Install AI tools
     ./ai
     ```
-The script will install `nvm` (Node Version Manager) to manage `nodejs` versions, the latest LTS version of `nodejs`, and `gemini-cli`.
 
 # Testing
 
-There are no automated tests in this project. To test the script's functionality, you can run it on an Alt Linux system and verify the following:
+There are no automated tests. To test functionality, run the scripts on an Alt Linux system and verify:
 
-*   The script correctly runs the system update commands.
-*   When run with `--install`, the script correctly installs `git` and `vscode`.
-*   The script correctly identifies if `git` or `vscode` are already installed and attempts to update them.
+- `up` correctly runs system updates.
+- `up --install` installs `git`, `vscode`, and `yt-dlp`.
+- `yt` correctly downloads a video with the specified format and path.
+- The scripts handle missing dependencies or arguments gracefully.
 
 # Development Conventions
 
-The script follows standard shell scripting best practices:
+The scripts follow standard shell scripting best practices:
 
-*   **Error Handling:** The `set -e` option is used to exit the script immediately if any command fails.
-*   **Functions:** The code is organized into functions with clear responsibilities (e.g., `check_root`, `install_applications`, `update_indexes`, `perform_full_upgrade`).
-*   **Logging:** The script provides informative output with color-coded messages for success, warnings, and errors.
+- **Error Handling:** `set -e` is used in the `up` script for immediate exit on error.
+- **Functions:** Code is organized into functions with clear responsibilities.
+- **Logging:** Scripts provide informative, color-coded output.
