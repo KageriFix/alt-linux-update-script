@@ -52,7 +52,7 @@ parse_args() {
                 echo "Использование: $0 [ОПЦИИ]"
                 echo ""
                 echo "Опции:"
-                echo "  -i, --install    Установить/обновить git, vscode, ffmpeg и yt-dlp"
+                echo "  -i, --install    Установить/обновить git, vscode, ffmpeg, pip и yt-dlp"
                 echo "  -h, --help       Показать эту справку"
                 echo ""
                 echo "Без опций скрипт только обновляет систему."
@@ -80,11 +80,13 @@ install_applications() {
     declare -A app_command_map
     app_command_map["git"]="git"
     app_command_map["code"]="code"
+    app_command_map["python3-module-pip"]="pip3"
 
     # Карта для сопоставления имени пакета и его отображаемого имени
     declare -A app_display_name_map
     app_display_name_map["git"]="git"
     app_display_name_map["code"]="vscode"
+    app_display_name_map["python3-module-pip"]="pip"
 
     for package_name in "${apps_to_install[@]}"; do
         local command_name=${app_command_map[$package_name]}
@@ -181,7 +183,7 @@ main() {
     log "Запуск скрипта."
 
     if [[ ${INSTALL_APPS} -eq 1 ]]; then
-        install_applications "git" "code" "ffmpeg"
+        install_applications "git" "code" "ffmpeg" "python3-module-pip"
         install_yt_dlp
     fi
 
