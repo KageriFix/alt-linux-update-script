@@ -1,0 +1,2 @@
+#!/bin/bash
+scrcpy --max-fps 60 --max-size 1920 --turn-screen-off --stay-awake --power-off-on-close
