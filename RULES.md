@@ -1,74 +1,85 @@
-# Project Overview
+# Обзор проекта
 
-This project provides a set of shell scripts for automating system updates, application installations, and other tasks on Alt Linux.
+Этот проект представляет собой набор shell-скриптов для автоматизации обновлений системы, установки приложений и других задач в Alt Linux.
 
-## `up` Script
+## Скрипт `up`
 
-The `up` script, designed to be run with root privileges, automates system maintenance.
+Скрипт `up`, предназначенный для запуска с правами root, автоматизирует обслуживание системы.
 
-### Key Features of `up`
+### Ключевые особенности `up`
 
-- **System Updates:** It updates the system by running `epm -y ei` and `epm -y full-upgrade`.
-- **Application Installation:** It can install `git`, `vscode`, and `yt-dlp`.
-- **Command-Line Interface:** Supports `--install` (or `-i`) and `--help` (or `-h`).
-- **Logging:** Provides clear, color-coded output for all operations.
+- **Обновления системы:** Обновляет систему, выполняя команды `epm -y ei` и `epm -y full-upgrade`.
+- **Установка приложений:** Может устанавливать `git`, `vscode`, `ffmpeg`, `pip` и `yt-dlp`.
+- **Интерфейс командной строки:** Поддерживает флаги `--install` (или `-i`) и `--help` (или `-h`).
+- **Логирование:** Обеспечивает четкий, цветной вывод для всех операций.
 
-## `yt` Script
+## Скрипт `yt`
 
-The `yt` script is a wrapper around `yt-dlp` for downloading YouTube videos.
+Скрипт `yt` — это обертка для `yt-dlp`, предназначенная для загрузки видео с YouTube.
 
-### Key Features of `yt`
+### Ключевые особенности `yt`
 
-- **Video Downloading:** Downloads a video from a given URL.
-- **Cookie Authentication:** Requires a `cookies.txt` file in the user's home directory.
-- **Formatting:** Recodes the video to `mp4`.
-- **Organized Output:** Saves the video to `~/video/<uploader>/<title>.mp4`.
+- **Загрузка видео:** Загружает видео по указанному URL.
+- **Аутентификация с помощью cookie:** Требует наличия файла `cookies.txt` в домашнем каталоге пользователя.
+- **Форматирование:** Перекодирует видео в формат `mp4`.
+- **Организованный вывод:** Сохраняет видео в `~/video/<uploader>/<title>.mp4`.
 
-## `ai` Script for AI Tools
+## Скрипт `ai` для инструментов ИИ
 
-The project also includes an `ai` script that installs `nodejs` and `gemini-cli`.
+Проект также включает скрипт `ai`, который устанавливает `nodejs` и `gemini-cli`.
 
-# Building and Running
+## Скрипт `ot`
 
-This project consists of standalone shell scripts and does not require a separate build process.
+Скрипт `ot` является ярлыком для запуска `scrcpy` (инструмента для отображения и управления Android-устройствами) с предопределенным набором параметров для высокопроизводительной трансляции экрана.
 
-1.  **Make the scripts executable:**
+### Ключевые особенности `ot`
+
+- Запускает `scrcpy` с ограничением FPS до 60 и разрешением до 1920px.
+- Автоматически отключает экран устройства во время трансляции.
+- Предотвращает переход устройства в спящий режим.
+- Выключает устройство при закрытии окна `scrcpy`.
+
+# Сборка и запуск
+
+Этот проект состоит из автономных shell-скриптов и не требует отдельного процесса сборки.
+
+1.  **Сделайте скрипты исполняемыми:**
     ```bash
     chmod +x up yt ai
     ```
 
-2.  **(Optional but Recommended) Create symbolic links:**
-    For global access, create symbolic links to a directory in your `PATH`.
+2.  **(Необязательно, но рекомендуется) Создайте символические ссылки:**
+    Для глобального доступа создайте символические ссылки в каталоге, который находится в вашем `PATH`.
     ```bash
     sudo ln -sf $(pwd)/up /usr/local/bin/up
     sudo ln -sf $(pwd)/yt /usr/local/bin/yt
     ```
 
-3.  **Run the scripts:**
+3.  **Запустите скрипты:**
     ```bash
-    # Update system and install apps
+    # Обновить систему и установить приложения
     sudo up --install
 
-    # Download a video
+    # Загрузить видео
     yt -u <URL>
 
-    # Install AI tools
+    # Установить инструменты ИИ
     ./ai
     ```
 
-# Testing
+# Тестирование
 
-There are no automated tests. To test functionality, run the scripts on an Alt Linux system and verify:
+Автоматизированные тесты отсутствуют. Для проверки функциональности запустите скрипты в системе Alt Linux и убедитесь, что:
 
-- `up` correctly runs system updates.
-- `up --install` installs `git`, `vscode`, and `yt-dlp`.
-- `yt` correctly downloads a video with the specified format and path.
-- The scripts handle missing dependencies or arguments gracefully.
+- `up` корректно выполняет обновления системы.
+- `up --install` устанавливает `git`, `vscode`, `ffmpeg`, `pip` и `yt-dlp`.
+- `yt` правильно загружает видео с указанным форматом и путем.
+- Скрипты корректно обрабатывают отсутствующие зависимости или аргументы.
 
-# Development Conventions
+# Соглашения по разработке
 
-The scripts follow standard shell scripting best practices:
+Скрипты следуют стандартным лучшим практикам написания shell-скриптов:
 
-- **Error Handling:** `set -e` is used in the `up` script for immediate exit on error.
-- **Functions:** Code is organized into functions with clear responsibilities.
-- **Logging:** Scripts provide informative, color-coded output.
+- **Обработка ошибок:** В скрипте `up` используется `set -e` для немедленного выхода при ошибке.
+- **Функции:** Код организован в функции с четко определенными обязанностями.
+- **Логирование:** Скрипты предоставляют информативный, цветной вывод.
