@@ -72,7 +72,7 @@ log "Запуск скачивания видео по URL: $URL"
 # Шаблон для сохранения: ~/video/ИмяАвтора/НазваниеВидео.mp4
 OUTPUT_TEMPLATE="$VIDEO_DIR/%(uploader)s/%(title)s.%(ext)s"
 
-if yt-dlp --cookies "$COOKIES_FILE" --recode-video mp4 -o "$OUTPUT_TEMPLATE" "$URL"; then
+if yt-dlp -f b --cookies "$COOKIES_FILE" --recode-video mp4 -o "$OUTPUT_TEMPLATE" "$URL"; then
     success "Видео успешно скачано."
 else
     error "yt-dlp не смог скачать видео."
