@@ -129,6 +129,7 @@ install_yt_dlp() {
     local install_dir="/opt/yt-dlp"
     local bin_path="$install_dir/yt-dlp"
     local symlink_path="/usr/local/bin/yt-dlp"
+    local symlink_path_alt="/usr/bin/yt-dlp"
     local download_url="https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp"
 
     if [[ -L "$symlink_path" ]]; then
@@ -151,8 +152,9 @@ install_yt_dlp() {
     log "Предоставление прав на выполнение..."
     chmod +x "$bin_path"
 
-    log "Создание символической ссылки..."
+    log "Создание символических ссылок..."
     ln -sf "$bin_path" "$symlink_path"
+    ln -sf "$bin_path" "$symlink_path_alt"
 
     if command -v yt-dlp &> /dev/null; then
         success "'yt-dlp' успешно установлен/обновлен."

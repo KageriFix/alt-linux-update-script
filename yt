@@ -23,13 +23,17 @@ success() {
 
 # --- Конфигурация ---
 VIDEO_DIR="$HOME/video"
-COOKIES_FILE="$HOME/cookies.txt"
+AUDIO_DIR="$HOME/audio"
 URL=""
+AUDIO_ONLY=false
+DEBUG_MODE=false
 
 # --- Разбор аргументов ---
 if [[ $# -eq 0 ]]; then
-    echo "Использование: $0 -u <YOUTUBE_URL>"
+    echo "Использование: $0 -u <YOUTUBE_URL> [-a] [-d]"
     echo "  -u, --url    URL видео на YouTube"
+    echo "  -a, --audio  Скачать только аудио в формате mp3"
+    echo "  -d, --debug  Включить режим отладки (показывать предупреждения yt-dlp)"
     exit 1
 fi
 
@@ -38,6 +42,14 @@ while [[ $# -gt 0 ]]; do
         -u|--url)
             URL="$2"
             shift 2
+            ;;
+        -a|--audio)
+            AUDIO_ONLY=true
+            shift 1
+            ;;
+        -d|--debug)
+            DEBUG_MODE=true
+            shift 1
             ;;
         *)
             error "Неизвестная опция: $1"
@@ -56,24 +68,45 @@ if ! command -v yt-dlp &> /dev/null; then
 fi
 success "yt-dlp найден."
 
-log "Проверка файла с cookies..."
-if [[ ! -f "$COOKIES_FILE" ]]; then
-    error "Файл cookies не найден по пути: $COOKIES_FILE"
+log "Поиск файла с cookies (*cookies.txt) в домашней директории (рекурсивно)..."
+COOKIES_FILE=$(find "$HOME" -name "*cookies.txt" -printf '%T@ %p\n' 2>/dev/null | sort -nr | head -n 1 | cut -d' ' -f2-)
+
+if [[ -z "$COOKIES_FILE" || ! -f "$COOKIES_FILE" ]]; then
+    error "Файл с cookies (*cookies.txt) не найден в домашней директории ($HOME)."
 fi
-success "Файл cookies найден."
+success "Используем самый свежий файл cookies: $COOKIES_FILE"
+
 
 # --- Основная логика ---
-log "Создание директории для видео, если она не существует..."
-mkdir -p "$VIDEO_DIR"
-success "Директория для видео: $VIDEO_DIR"
+# Общие опции для yt-dlp
+YT_DLP_COMMON_OPTS="--ignore-errors --user-agent 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36'"
+if [ "$DEBUG_MODE" = false ]; then
+    YT_DLP_COMMON_OPTS="$YT_DLP_COMMON_OPTS --no-warnings"
+fi
+YT_DLP_COOKIE_ARGS="--cookies \"$COOKIES_FILE\""
 
-log "Запуск скачивания видео по URL: $URL"
+if [ "$AUDIO_ONLY" = true ]; then
+    log "Создание директории для аудио, если она не существует..."
+    mkdir -p "$AUDIO_DIR"
+    success "Директория для аудио: $AUDIO_DIR"
+    OUTPUT_TEMPLATE="$AUDIO_DIR/%(uploader)s/%(title)s.%(ext)s"
 
-# Шаблон для сохранения: ~/video/ИмяАвтора/НазваниеВидео.mp4
-OUTPUT_TEMPLATE="$VIDEO_DIR/%(uploader)s/%(title)s.%(ext)s"
-
-if yt-dlp -f b --cookies "$COOKIES_FILE" --recode-video mp4 -o "$OUTPUT_TEMPLATE" "$URL"; then
-    success "Видео успешно скачано."
+    log "Запуск скачивания аудио по URL: $URL"
+    if eval yt-dlp $YT_DLP_COMMON_OPTS -f 'bestaudio/best' --extract-audio --audio-format mp3 --audio-quality 0 $YT_DLP_COOKIE_ARGS -o \"$OUTPUT_TEMPLATE\" \"$URL\"; then
+        success "Скачивание аудио завершено."
+    else
+        error "yt-dlp не смог скачать аудио."
+    fi
 else
-    error "yt-dlp не смог скачать видео."
+    log "Создание директории для видео, если она не существует..."
+    mkdir -p "$VIDEO_DIR"
+    success "Директория для видео: $VIDEO_DIR"
+    OUTPUT_TEMPLATE="$VIDEO_DIR/%(uploader)s/%(title)s.%(ext)s"
+
+    log "Запуск скачивания видео по URL: $URL"
+    if eval yt-dlp $YT_DLP_COMMON_OPTS -f b --recode-video mp4 $YT_DLP_COOKIE_ARGS -o \"$OUTPUT_TEMPLATE\" \"$URL\"; then
+        success "Скачивание видео завершено."
+    else
+        error "yt-dlp не смог скачать видео."
+    fi
 fi

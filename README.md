@@ -101,12 +101,12 @@ yt -u "https://www.youtube.com/watch?v=..."
 
 3.  **Создайте символические ссылки (рекомендуется):**
 
-    Чтобы вызывать скрипты из любого места в системе по их имени (`up`, `yt`), создайте символические ссылки в директории, которая находится в вашем `PATH` (например, `/usr/local/bin`).
+    Чтобы вызывать скрипты из любого места в системе по их имени (`up`, `yt`), создайте символические ссылки в директории, которая находится в вашем `PATH` (например, `/usr/local/bin` для `root` и `/usr/bin` для `user` ).
 
     ```bash
     sudo ln -sf "$(pwd)/up" /usr/local/bin/up
-    sudo ln -sf "$(pwd)/yt" /usr/local/bin/yt
-    sudo ln -sf "$(pwd)/ot" /usr/local/bin/ot
+    sudo ln -sf "$(pwd)/yt" /usr/bin/yt
+    sudo ln -sf "$(pwd)/ot" /usr/bin/ot
     # Для скрипта 'ai' можно сделать так же, если требуется
     # sudo ln -sf "$(pwd)/ai" /usr/local/bin/ai
     ```
