@@ -107,8 +107,7 @@ yt -u "https://www.youtube.com/watch?v=..."
     sudo ln -sf "$(pwd)/up" /usr/local/bin/up
     sudo ln -sf "$(pwd)/yt" /usr/bin/yt
     sudo ln -sf "$(pwd)/ot" /usr/bin/ot
-    # Для скрипта 'ai' можно сделать так же, если требуется
-    # sudo ln -sf "$(pwd)/ai" /usr/local/bin/ai
+    sudo ln -sf "$(pwd)/ai" /usr/bin/ai
     ```
     Теперь вы можете использовать команды `sudo up` или `yt` вместо `sudo ./up` или `./yt`.
 
