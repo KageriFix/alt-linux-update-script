@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Скрипт для скачивания видео с YouTube с использованием yt-dlp.
+VERSION="1.1.0"
 
 # --- Цвета и функции логирования ---
 RED='\033[0;31m'
@@ -61,12 +62,15 @@ if [[ -z "$URL" ]]; then
     error "URL не указан. Используйте -u или --url."
 fi
 
+log "Запуск yt v$VERSION"
+
 # --- Проверки перед запуском ---
 log "Проверка наличия yt-dlp..."
 if ! command -v yt-dlp &> /dev/null; then
     error "Утилита 'yt-dlp' не найдена. Пожалуйста, установите ее."
 fi
-success "yt-dlp найден."
+YT_DLP_VER=$(yt-dlp --version)
+success "yt-dlp найден (версия: $YT_DLP_VER)."
 
 log "Поиск файла с cookies (*cookies.txt) в домашней директории (рекурсивно)..."
 COOKIES_FILE=$(find "$HOME" -name "*cookies.txt" -printf '%T@ %p\n' 2>/dev/null | sort -nr | head -n 1 | cut -d' ' -f2-)
