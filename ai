@@ -1,7 +1,9 @@
 #!/bin/bash
 
 # Скрипт для установки AI инструментов.
-VERSION="1.0.0"
+VERSION="1.1.0"
+
+set -e # Выход при ошибке
 
 # --- Цвета и функции логирования ---
 RED='\033[0;31m'
@@ -16,6 +18,7 @@ log() {
 
 error() {
     echo -e "${RED}[ОШИБКА]${NC} $1" >&2
+    exit 1
 }
 
 success() {
@@ -27,26 +30,74 @@ warning() {
 }
 # --- Конец секции логирования ---
 
+# --- Переменные ---
+UPDATE_MODE=0
+
+# --- Разбор аргументов ---
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -u|--update)
+                UPDATE_MODE=1
+                shift
+                ;;
+            -h|--help)
+                echo "Использование: $0 [ОПЦИИ]"
+                echo ""
+                echo "Опции:"
+                echo "  -u, --update     Обновить nodejs и gemini-cli"
+                echo "  -h, --help       Показать эту справку"
+                exit 0
+                ;;
+            *)
+                error "Неизвестная опция: $1"
+                ;;
+        esac
+    done
+}
+
 # --- Основные функции ---
+
+check_dependencies() {
+    if ! command -v curl &> /dev/null; then
+        error "Для работы скрипта требуется 'curl'. Пожалуйста, установите его (sudo epm install curl)."
+    fi
+}
 
 # Функция для установки nvm и nodejs
 install_nodejs() {
     log "Проверка наличия nvm..."
+    
+    # Пытаемся загрузить nvm, если он установлен
     if [ -s "$HOME/.nvm/nvm.sh" ]; then
-        log "nvm уже установлен."
         source "$HOME/.nvm/nvm.sh"
+    fi
+
+    if command -v nvm &> /dev/null; then
+        log "nvm уже установлен."
     else
         log "nvm не найден. Установка nvm..."
+        # Используем версию v0.39.7, можно будет обновлять эту константу при необходимости
         curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+        
+        # Загружаем nvm в текущую сессию скрипта сразу после установки
         export NVM_DIR="$HOME/.nvm"
         [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
         [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+        
         success "nvm успешно установлен."
     fi
 
     log "Проверка наличия nodejs..."
     if command -v node &> /dev/null; then
-        log "nodejs уже установлен. Версия: $(node -v)"
+        local current_node_ver=$(node -v)
+        log "nodejs уже установлен. Версия: $current_node_ver"
+        
+        if [[ $UPDATE_MODE -eq 1 ]]; then
+            log "Обновление nodejs до последней LTS версии..."
+            nvm install --lts --reinstall-packages-from=current
+            success "nodejs обновлен."
+        fi
     else
         log "nodejs не найден. Установка последней LTS версии nodejs..."
         nvm install --lts
@@ -57,8 +108,14 @@ install_nodejs() {
 # Функция для установки gemini-cli
 install_gemini_cli() {
     log "Проверка наличия gemini-cli..."
+    
     if command -v gemini &> /dev/null; then
         log "gemini-cli уже установлен."
+        if [[ $UPDATE_MODE -eq 1 ]]; then
+            log "Обновление gemini-cli..."
+            npm install -g @google/gemini-cli@latest
+            success "gemini-cli обновлен."
+        fi
     else
         log "gemini-cli не найден. Установка gemini-cli..."
         npm install -g @google/gemini-cli
@@ -68,12 +125,16 @@ install_gemini_cli() {
 
 # --- Основная логика ---
 main() {
+    parse_args "$@"
+    
     log "Запуск скрипта установки AI инструментов (v$VERSION)."
-
+    
+    check_dependencies
     install_nodejs
     install_gemini_cli
 
     success "Скрипт успешно завершил работу."
+    warning "Если вы устанавливали nvm впервые, перезапустите терминал или выполните 'source ~/.bashrc', чтобы изменения вступили в силу."
 }
 
 # Запуск
