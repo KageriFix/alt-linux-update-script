@@ -79,7 +79,7 @@ success "Используем самый свежий файл cookies: $COOKIES
 
 # --- Основная логика ---
 # Общие опции для yt-dlp
-YT_DLP_COMMON_OPTS="--ignore-errors --user-agent 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36'"
+YT_DLP_COMMON_OPTS="--ignore-errors"
 if [ "$DEBUG_MODE" = false ]; then
     YT_DLP_COMMON_OPTS="$YT_DLP_COMMON_OPTS --no-warnings"
 fi
