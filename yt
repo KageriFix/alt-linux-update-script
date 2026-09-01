@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Скрипт для скачивания видео с YouTube с использованием yt-dlp.
-VERSION="1.5.1"
+VERSION="1.6.0"
 
 # --- Цвета и функции логирования ---
 RED='\033[0;31m'
@@ -120,10 +120,13 @@ success "Используем самый свежий файл cookies: $COOKIES
 
 # --- Основная логика ---
 # Общие опции для yt-dlp.
-# Спуфинг Android-клиента против 403 ошибки; web_embedded/tv — фолбэк для
-# видео и tab-страниц, недоступных через android. Мобильный --user-agent
-# не используется: он ведёт на m.youtube.com, который может не резолвиться.
-YT_DLP_COMMON_OPTS="--ignore-errors --rm-cache-dir --extractor-args \"youtube:player_client=android,web_embedded,tv\""
+# Спуфинг Android-клиента против 403 ошибки. Только android: 1 player API
+# на видео вместо 3 (web_embedded/tv убраны) - втрое меньше запросов, квота
+# rate-limit YouTube хватает дольше. Из-за SABR-эксперимента часть видео
+# может не получить форматы через android и будет пропущена (--ignore-errors).
+# Мобильный --user-agent не используется: он ведёт на m.youtube.com,
+# который может не резолвиться.
+YT_DLP_COMMON_OPTS="--ignore-errors --rm-cache-dir --extractor-args \"youtube:player_client=android\""
 
 # Для массовых загрузок (канал/плейлист) включаем случайные задержки.
 # --sleep-requests растягивает поток экстракции (2с x ~6 запросов на видео
